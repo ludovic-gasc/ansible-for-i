@@ -1,0 +1,66 @@
+# Copyright (c) IBM Corporation 2024
+# Apache License, Version 2.0 (see https://opensource.org/licenses/Apache-2.0)
+---
+- name: Playbook to install tools and setup Bash on IBM i
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Create two links to be able to use YUM on IBM i
+      ansible.builtin.file:
+        src: "/QOpenSys/pkgs/bin/{{ item.src }}"
+        dest: "/usr/bin/{{ item.dest }}"
+        state: link
+      loop:
+        - { src: python2, dest: python }
+        - { src: yum, dest: yum }
+      tags: yum
+
+    - name: Install tools
+      ansible.builtin.yum:
+        pkg:
+          - less
+          - rsync
+          - ibmichroot
+          - ncdu
+          - chsh
+          - mc
+          - curl
+          - wget
+          - p7zip
+          - jq
+          - logrotate
+          - tmux
+          - bash
+          - nano
+          - awk
+          - tail
+        state: latest
+        update_cache: false
+      tags: yum
+
+    - name: Define default shell as Bash
+      ibm.power_ibmi.ibmi_sql_execute:
+        sql: "CALL QSYS2.SET_PASE_SHELL_INFO('*CURRENT', '/QOpenSys/pkgs/bin/bash')"
+      tags: shell
+
+    - name: Create ~/.bash_profile if not exists
+      ansible.builtin.file:
+        path: ~/.bash_profile
+        state: touch
+        mode: u+rw,g-rwx,o-rwx
+        modification_time: preserve
+        access_time: preserve
+      tags: profile
+
+    - name: make sure function is in bashrc
+      blockinfile:
+        dest: ~/.bash_profile
+        marker: "# {mark} ANSIBLE MANAGED BLOCK bash_profile - Please do not modify"
+        block: |
+          # PS1: Shell prompt format
+          export PS1="\e[1;34m[\u@\h \W]\$ \e[m"
+          # PATH: All PASE binaries are in /QOpenSys/pkgs/bin
+          export PATH=/QOpenSys/pkgs/bin:$PATH
+          # LANG: some tools (for example: tmux) need UTF-8 charset
+          export LANG=EN_US.UTF-8
+      tags: profile
