@@ -32,9 +32,7 @@
           - tmux
           - bash
           - nano
-          - awk
-          - tail
-        state: latest
+        state: present
         update_cache: false
       tags: yum
 
@@ -52,8 +50,8 @@
         access_time: preserve
       tags: profile
 
-    - name: make sure function is in bashrc
-      blockinfile:
+    - name: Make sure function is in bashrc
+      ansible.builtin.blockinfile:
         dest: ~/.bash_profile
         marker: "# {mark} ANSIBLE MANAGED BLOCK bash_profile - Please do not modify"
         block: |
