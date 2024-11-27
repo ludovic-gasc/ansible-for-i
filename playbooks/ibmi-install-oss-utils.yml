@@ -1,0 +1,35 @@
+# Copyright (c) IBM Corporation 2024
+# Apache License, Version 2.0 (see https://opensource.org/licenses/Apache-2.0)
+---
+- name: Playbook to install OpenSource utils
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Create two links to be able to use YUM on IBM i
+      ansible.builtin.file:
+        src: "/QOpenSys/pkgs/bin/{{ item.src }}"
+        dest: "/usr/bin/{{ item.dest }}"
+        state: link
+      loop:
+        - { src: python2, dest: python }
+        - { src: yum, dest: yum }
+
+    - name: Install useful OSS utils for IBM i PASE
+      ansible.builtin.yum:
+        pkg:
+          - less # text reader
+          - rsync # synchronize files
+          - ibmichroot # chroot for IBM i
+          - ncdu # storage space viewer
+          - chsh # define default shell
+          - mc # file browser
+          - curl # download files
+          - wget # download files
+          - p7zip # 7zip support
+          - jq # sed for JSON data
+          - logrotate # logs file rotation
+          - tmux # terminal multiplexer
+          - bash # shell
+          - nano # text editor
+        state: present
+        update_cache: false
